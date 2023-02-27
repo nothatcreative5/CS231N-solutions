@@ -73,8 +73,20 @@ class FullyConnectedNet(object):
         # parameters should be initialized to zeros.                               #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        print(hidden_dims)
+        l_name = 1
+        in_size = input_dim
+        for layer in range(1, self.num_layers - 1):
+            self.params[f'W{l_name}'] = np.random.normal(size = (in_size, hidden_dims[layer - 1]),loc=0, scale = weight_scale)
+            self.params[f'b{l_name}'] = np.zeros(hidden_dims[layer - 1])
+            in_size = hidden_dims[layer]
+            l_name += 1
 
-        pass
+        self.params[f'W{l_name}'] = np.random.normal(size = (hidden_dims[-1], num_classes), loc = 0, scale = weight_scale)
+        self.params[f'b{l_name}'] = np.zeros(shape=num_classes)
+
+        for param in self.params.values():
+            print(param.shape)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -148,7 +160,11 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        for idx in range(len(self.params)):
+            W = self.params[f'W{idx + 1}']
+            b = self.params[f'b{idx + 1}']
+            
+
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################

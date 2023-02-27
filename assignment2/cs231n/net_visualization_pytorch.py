@@ -33,8 +33,13 @@ def compute_saliency_maps(X, y, model):
     # the gradients with a backward pass.                                        #
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    loss = model(X).gather(1, y.view(-1, 1)).squeeze()
+    loss = torch.sum(loss)
+    loss.backward()
 
-    pass
+    saliency = torch.abs(X.grad)
+    saliency = torch.max(saliency, dim = 1).values
+
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -76,7 +81,19 @@ def make_fooling_image(X, target_y, model):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    for i in range(150):
+        scores = model(X_fooling)
+        scores[0, target_y].backward()
+
+        grad_norm = torch.norm(X_fooling.grad)
+        dX = learning_rate * X_fooling.grad / grad_norm
+
+        X_fooling.data += dX.data
+
+        X_fooling.grad.zero_()
+
+        if model(X_fooling).argmax() == target_y:
+            break
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -94,8 +111,18 @@ def class_visualization_update_step(img, model, target_y, l2_reg, learning_rate)
     ########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    scores = model(img)
+    loss = scores[0, target_y] - l2_reg * torch.norm(img)
 
+    loss.backward()
+
+    grad_norm = torch.norm(img.grad)
+    dX = learning_rate * img.grad / grad_norm
+
+    img.data += dX.data
+
+    img.grad.zero_()
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ########################################################################
     #                             END OF YOUR CODE                         #
