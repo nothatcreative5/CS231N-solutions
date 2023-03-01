@@ -1,5 +1,3 @@
-import numpy as np
-
 """
 This file implements various first-order update rules that are commonly used
 for training neural networks. Each update rule accepts current weights and the
@@ -28,6 +26,8 @@ work well for a variety of different problems.
 For efficiency, update rules may perform in-place updates, mutating w and
 setting next_w equal to w.
 """
+
+import numpy as np
 
 
 def sgd(w, dw, config=None):
@@ -63,19 +63,10 @@ def sgd_momentum(w, dw, config=None):
     v = config.get("velocity", np.zeros_like(w))
 
     next_w = None
-    ###########################################################################
-    # TODO: Implement the momentum update formula. Store the updated value in #
-    # the next_w variable. You should also use and update the velocity v.     #
-    ###########################################################################
-    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-    mu = config['momentum']
-    lr = config['learning_rate']
-    v = mu * v - lr * dw
-    next_w = w + v
-    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    v *= config["momentum"]
+    v -= config["learning_rate"] * dw
+    w += v
+    next_w = w
     config["velocity"] = v
 
     return next_w, config
@@ -101,24 +92,14 @@ def rmsprop(w, dw, config=None):
     config.setdefault("cache", np.zeros_like(w))
 
     next_w = None
-    ###########################################################################
-    # TODO: Implement the RMSprop update formula, storing the next value of w #
-    # in the next_w variable. Don't forget to update cache value stored in    #
-    # config['cache'].                                                        #
-    ###########################################################################
-    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-    decay = config["decay_rate"]
+    rho = config["decay_rate"]
     lr = config["learning_rate"]
-    epsilon = config["epsilon"]
-    cache = config["cache"]
-
-    config["cache"] = config["decay_rate"] * config["cache"] + (1 - config["decay_rate"]) * dw ** 2
-    next_w = w - config["learning_rate"] / np.sqrt(config["cache"] + epsilon) * dw
-
-    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    eps = config["epsilon"]
+    config["cache"] *= rho
+    config["cache"] += (1.0 - rho) * dw ** 2
+    step = -(lr * dw) / (np.sqrt(config["cache"]) + eps)
+    w += step
+    next_w = w
 
     return next_w, config
 
@@ -148,30 +129,16 @@ def adam(w, dw, config=None):
     config.setdefault("t", 0)
 
     next_w = None
-    ###########################################################################
-    # TODO: Implement the Adam update formula, storing the next value of w in #
-    # the next_w variable. Don't forget to update the m, v, and t variables   #
-    # stored in config.                                                       #
-    #                                                                         #
-    # NOTE: In order to match the reference output, please modify t _before_  #
-    # using it in any calculations.                                           #
-    ###########################################################################
-    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    config["t"] += 1
-
-    config["m"] = config["beta1"] * config["m"] + (1 - config["beta1"]) * dw
-    config["v"] = config["beta2"] * config["v"] + (1 - config["beta2"]) * (dw**2)
-
-    mt = config["m"] / (1 - config["beta1"] ** config["t"])
-    vt = config["v"] / (1 - config["beta2"] ** config["t"])
-
-    next_w = w - mt * config["learning_rate"] / (np.sqrt(vt + config["epsilon"]))
-
-
-    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    beta1, beta2, eps = config["beta1"], config["beta2"], config["epsilon"]
+    t, m, v = config["t"], config["m"], config["v"]
+    m = beta1 * m + (1 - beta1) * dw
+    v = beta2 * v + (1 - beta2) * (dw * dw)
+    t += 1
+    alpha = config["learning_rate"] * np.sqrt(1 - beta2 ** t) / (1 - beta1 ** t)
+    w -= alpha * (m / (np.sqrt(v) + eps))
+    config["t"] = t
+    config["m"] = m
+    config["v"] = v
+    next_w = w
 
     return next_w, config
