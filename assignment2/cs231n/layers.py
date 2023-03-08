@@ -2,10 +2,8 @@ from builtins import range
 import numpy as np
 
 
-
 def affine_forward(x, w, b):
-    """
-    Computes the forward pass for an affine (fully-connected) layer.
+    """Computes the forward pass for an affine (fully connected) layer.
 
     The input x has shape (N, d_1, ..., d_k) and contains a minibatch of N
     examples, where each example x[i] has shape (d_1, ..., d_k). We will
@@ -23,13 +21,11 @@ def affine_forward(x, w, b):
     """
     out = None
     ###########################################################################
-    # TODO: Implement the affine forward pass. Store the result in out. You   #
-    # will need to reshape the input into rows.                               #
+    # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-    
+
     x_row = x.reshape(x.shape[0], -1)
-  
 
     out = x_row @ w + b
 
@@ -42,8 +38,7 @@ def affine_forward(x, w, b):
 
 
 def affine_backward(dout, cache):
-    """
-    Computes the backward pass for an affine layer.
+    """Computes the backward pass for an affine (fully connected) layer.
 
     Inputs:
     - dout: Upstream derivative, of shape (N, M)
@@ -60,16 +55,16 @@ def affine_backward(dout, cache):
     x, w, b = cache
     dx, dw, db = None, None, None
     ###########################################################################
-    # TODO: Implement the affine backward pass.                               #
+    # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+
     x_row = x.reshape(x.shape[0], -1)
-    db = np.sum(dout, axis=0)
+    db = np.sum(dout, axis = 0)
     dw = x_row.T @ dout
     dx = dout @ w.T
 
     dx = dx.reshape(x.shape)
-
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -79,8 +74,7 @@ def affine_backward(dout, cache):
 
 
 def relu_forward(x):
-    """
-    Computes the forward pass for a layer of rectified linear units (ReLUs).
+    """Computes the forward pass for a layer of rectified linear units (ReLUs).
 
     Input:
     - x: Inputs, of any shape
@@ -91,7 +85,7 @@ def relu_forward(x):
     """
     out = None
     ###########################################################################
-    # TODO: Implement the ReLU forward pass.                                  #
+    # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -106,8 +100,7 @@ def relu_forward(x):
 
 
 def relu_backward(dout, cache):
-    """
-    Computes the backward pass for a layer of rectified linear units (ReLUs).
+    """Computes the backward pass for a layer of rectified linear units (ReLUs).
 
     Input:
     - dout: Upstream derivatives, of any shape
@@ -118,11 +111,10 @@ def relu_backward(dout, cache):
     """
     dx, x = None, cache
     ###########################################################################
-    # TODO: Implement the ReLU backward pass.                                 #
+    # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    dx = np.array(dout * (x > 0), dtype=x.dtype)
+    dx = np.array(dout * (x > 0), dtype = x.dtype)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -132,8 +124,7 @@ def relu_backward(dout, cache):
 
 
 def softmax_loss(x, y):
-    """
-    Computes the loss and gradient for softmax classification.
+    """Computes the loss and gradient for softmax classification.
 
     Inputs:
     - x: Input data, of shape (N, C) where x[i, j] is the score for the jth
@@ -148,7 +139,7 @@ def softmax_loss(x, y):
     loss, dx = None, None
 
     ###########################################################################
-    # TODO: Copy over your solution from A1.
+    # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -164,13 +155,11 @@ def softmax_loss(x, y):
     dx += x_prob
     dx /= x.shape[0]
 
-
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return loss, dx
-
 
 
 def batchnorm_forward(x, gamma, beta, bn_param):
@@ -458,7 +447,8 @@ def dropout_forward(x, dropout_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        mask = (np.random.rand(*x.shape) < p) / p
+        out = mask * x 
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -470,7 +460,7 @@ def dropout_forward(x, dropout_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        out = x
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -500,7 +490,7 @@ def dropout_backward(dout, cache):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        dx = dout * mask
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################

@@ -75,11 +75,9 @@ class FullyConnectedNet(object):
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
       
         dims = [input_dim] + hidden_dims + [num_classes]
-        counter = 1
         for i in range(self.num_layers):
-          self.params[f'W{counter}'] = np.random.normal(scale = weight_scale, size = (dims[i], dims[i + 1]))
-          self.params[f'b{counter}'] = np.zeros(shape = (dims[i + 1],))
-          counter += 1
+          self.params[f'W{i+1}'] = np.random.normal(scale = weight_scale, size = (dims[i], dims[i + 1]))
+          self.params[f'b{i+1}'] = np.zeros(shape = (dims[i + 1],))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -154,15 +152,15 @@ class FullyConnectedNet(object):
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         caches = []
-        out, cache = affine_forward(x = X, w = self.params['W1'], b = self.params['b1'])
-        caches.append(cache)
-        out, cache = relu_forward(x = out)
-        caches.append(cache)
-        for i in range(2, self.num_layers):
+        out = X
+        for i in range(1, self.num_layers):
           out,cache = affine_forward(x = out, w = self.params[f'W{i}'], b = self.params[f'b{i}'])
           caches.append(cache)
           out, cache = relu_forward(x = out)
           caches.append(cache)
+          if self.use_dropout:
+            out, cache = dropout_forward(x = out, dropout_param = self.dropout_param)
+            caches.append(cache)
         scores, cache = affine_forward(x = out, w = self.params[f'W{self.num_layers}'],
          b = self.params[f'b{self.num_layers}'])
         caches.append(cache)  
@@ -197,22 +195,21 @@ class FullyConnectedNet(object):
 
         for i in range(1, self.num_layers + 1):
           loss += self.reg * 0.5 * np.sum(self.params[f'W{i}'] ** 2)
-
-        # print(len(caches))
-
-        (dx, dw, db) = affine_backward(dx, caches[-1])
+        # print(caches[-1])
+        # print(caches.pop())
+      
+        (dx, dw, db) = affine_backward(dx, caches.pop())
 
         grads[f'W{self.num_layers}'] = dw + self.reg * self.params[f'W{self.num_layers}']
         grads[f'b{self.num_layers}'] = db
   
-        # print(len(caches))
-        j = len(caches) - 2
         for i in range(self.num_layers - 1, 0, -1):
-          dx = relu_backward(dx, caches[j])
-          (dx, dw, db) = affine_backward(dx, caches[j - 1])
+          if self.use_dropout:
+            dx = dropout_backward(dx, caches.pop())
+          dx = relu_backward(dx, caches.pop())
+          (dx, dw, db) = affine_backward(dx, caches.pop())
           grads[f'W{i}'] = dw + self.reg * self.params[f'W{i}']
           grads[f'b{i}'] = db
-          j -= 2
 
         # for an in grads.keys():
         #   print(an)
