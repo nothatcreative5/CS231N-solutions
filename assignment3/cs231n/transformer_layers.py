@@ -38,8 +38,12 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
-
+        pe = pe + torch.arange(0,pe.shape[1]).view(-1, 1)
+        D = torch.zeros_like(pe)
+        D[:,:,::2] = D[:,:,1::2] = 10000 ** (torch.arange(0, pe.shape[2], 2) / -pe.shape[2])
+        pe = D * pe
+        pe[:,:,::2] = torch.sin(pe[:,:,::2])
+        pe[:,:,1::2] = torch.cos(pe[:,:,1::2])
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -70,7 +74,8 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        output = x + self.pe[:,torch.arange(0, S),:]
+        output = self.dropout(output)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -165,7 +170,27 @@ class MultiHeadAttention(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        H = self.n_head
+        # N,H,S,E//H
+        Q = self.query(query).view(N, S, H, E//H).permute(0, 2, 1, 3)
+        #N,H,E//H,T
+        K = self.key(key).view(N, T, H, E//H).permute(0, 2, 3, 1)
+        #N,H,T,E//H
+        V = self.value(value).view(N, T, H, E//H).permute(0, 2, 1, 3)
+
+        # N,H,S,T
+        A = torch.matmul(Q, K) / torch.sqrt(torch.Tensor([E/H]))
+
+        if attn_mask is not None:
+          A = A.masked_fill(attn_mask == 0, -1e9)
+        
+        A = F.softmax(A, dim = -1)
+        A = self.attn_drop(A)
+
+        # N,H,S,E//H
+        output = A.matmul(V)
+        # N,S,H,E//H -> N,S,E
+        output = self.proj(output.permute(0, 2, 1, 3).reshape(N, -1, E))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
