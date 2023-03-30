@@ -148,7 +148,25 @@ class CaptioningRNN:
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # forward
+        image_f, cache_affine = affine_forward(features, W_proj, b_proj)
+        word_embed, cache_we = word_embedding_forward(captions_in, W_embed)
+
+        h, cache_rnn = rnn_forward(word_embed, image_f, Wx ,Wh, b)
+        scores, cache_temp  = temporal_affine_forward(h, W_vocab, b_vocab)
+
+        # Loss
+        loss, dx = temporal_softmax_loss(scores, captions_out, mask)
+
+        dx, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(dx,cache_temp)
+
+        # backward
+        dx, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dx, cache_rnn)
+        grads['W_embed'] = word_embedding_backward(dx, cache_we)
+
+        _, grads['W_proj'], grads['b_proj'] = affine_backward(dh0, cache_affine)
+
+
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -215,8 +233,22 @@ class CaptioningRNN:
         # you are using an LSTM, initialize the first cell state to zeros.        #
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        # self._null = word_to_idx["<NULL>"]
+        # self._start = word_to_idx.get("<START>", None)
+        # self._end = word_to_idx.get("<END>", None)
 
-        pass
+        h, _ = affine_forward(features, W_proj, b_proj)
+        pred_words = np.full((N, 1), self._start)
+
+        for i in range(max_length):
+          word_embed, _ = word_embedding_forward(pred_words, W_embed)
+          word_embed = word_embed.squeeze(1)   
+          h, _ = rnn_step_forward(word_embed, h, Wx, Wh, b)
+          scores, _  = temporal_affine_forward(np.expand_dims(h, axis = 1), W_vocab, b_vocab)
+          scores = scores.squeeze(1)
+          indices = np.argmax(scores, axis = 1)
+          captions[:, i] = indices
+
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
