@@ -151,8 +151,10 @@ class CaptioningRNN:
         # forward
         image_f, cache_affine = affine_forward(features, W_proj, b_proj)
         word_embed, cache_we = word_embedding_forward(captions_in, W_embed)
-
-        h, cache_rnn = rnn_forward(word_embed, image_f, Wx ,Wh, b)
+        if self.cell_type == 'rnn':
+          h, cache_rnn = rnn_forward(word_embed, image_f, Wx ,Wh, b)
+        else:
+          h, cache_lstm = lstm_forward(word_embed, image_f, Wx, Wh, b)
         scores, cache_temp  = temporal_affine_forward(h, W_vocab, b_vocab)
 
         # Loss
@@ -161,7 +163,10 @@ class CaptioningRNN:
         dx, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(dx,cache_temp)
 
         # backward
-        dx, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dx, cache_rnn)
+        if self.cell_type == 'rnn':
+          dx, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dx, cache_rnn)
+        else:
+          dx, dh0, grads['Wx'], grads['Wh'], grads['b'] = lstm_backward(dx, cache_lstm)
         grads['W_embed'] = word_embedding_backward(dx, cache_we)
 
         _, grads['W_proj'], grads['b_proj'] = affine_backward(dh0, cache_affine)
@@ -238,16 +243,21 @@ class CaptioningRNN:
         # self._end = word_to_idx.get("<END>", None)
 
         h, _ = affine_forward(features, W_proj, b_proj)
+        c = np.zeros(h.shape)
         pred_words = np.full((N, 1), self._start)
 
         for i in range(max_length):
           word_embed, _ = word_embedding_forward(pred_words, W_embed)
           word_embed = word_embed.squeeze(1)   
-          h, _ = rnn_step_forward(word_embed, h, Wx, Wh, b)
+          if self.cell_type == 'rnn':
+            h, _ = rnn_step_forward(word_embed, h, Wx, Wh, b)
+          else:
+            h, c,_ = lstm_step_forward(word_embed, h,c, Wx, Wh, b)
           scores, _  = temporal_affine_forward(np.expand_dims(h, axis = 1), W_vocab, b_vocab)
           scores = scores.squeeze(1)
           indices = np.argmax(scores, axis = 1)
           captions[:, i] = indices
+          pred_words = indices.reshape((N, 1))
 
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
